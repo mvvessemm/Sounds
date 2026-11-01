@@ -1,0 +1,1416 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Klankbord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a neutral console with a slim header and a grid of bright pads. The only colour comes from the pads the user colours. Editing happens in a sheet over the board. */
+:root{
+  --bg:#0e1014;
+  --surface:#171b21;
+  --surface-2:#20252c;
+  --line:#2d343d;
+  --fg:#eef1f5;
+  --muted:#98a2af;
+  --danger:#ff8585;
+  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#e8ebef;--surface:#ffffff;--surface-2:#eff2f5;--line:#cfd5dc;--fg:#14171c;--muted:#5b6572;--danger:#b3261e;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#e8ebef;--surface:#ffffff;--surface-2:#eff2f5;--line:#cfd5dc;--fg:#14171c;--muted:#5b6572;--danger:#b3261e;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
+button,input,label{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+.muted{color:var(--muted)}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%)}
+
+.app{max-width:1440px;margin-inline:auto;padding-inline:16px;padding-block:14px 48px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;margin-bottom:14px}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;min-width:0}
+h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:2rem;letter-spacing:.08em;text-transform:uppercase;line-height:1}
+.counts{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-weight:600;line-height:1.1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.btn:active{transform:scale(.97)}
+.btn-solid,.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn-danger{color:var(--danger);border-color:var(--danger);background:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:disabled:active{transform:none}
+
+/* Board tabs */
+.boards{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.board-tab{display:inline-flex;align-items:center;gap:8px;min-height:44px;max-width:100%;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-family:var(--f-display);font-weight:700;font-size:1.15rem;letter-spacing:.06em;text-transform:uppercase;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.board-tab:active{transform:scale(.97)}
+.board-tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.board-tab svg{display:block;width:18px;height:18px;fill:currentColor}
+.board-tab .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.board-add{border-style:dashed;background:transparent;color:var(--muted)}
+
+.hint{margin:0 0 14px;color:var(--muted)}
+.notice{margin:0 0 14px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted)}
+
+/* Pads */
+.grid{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:14px}
+.tile{position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:12px;min-width:0;min-height:150px;aspect-ratio:1.15;padding:14px 14px 18px;border:0;border-radius:18px;background:var(--tile);color:var(--on);text-align:left;overflow:hidden;
+  box-shadow:inset 0 -48px 56px -44px rgba(0,0,0,.28);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  transition:transform .08s}
+.tile:active{transform:scale(.97)}
+.tile.is-playing{outline:3px solid var(--fg);outline-offset:3px}
+.app.editing .tile{outline:2px dashed var(--muted);outline-offset:3px}
+.tile-text{display:flex;flex-direction:column;gap:6px;min-width:0}
+.name{flex:none;font-family:var(--f-display);font-weight:700;font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.05;letter-spacing:.01em;text-transform:uppercase;overflow-wrap:normal;overflow:hidden}
+.meta{font-size:.9rem;font-weight:500;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{position:absolute;left:0;right:0;bottom:0;height:6px;opacity:0;transition:opacity .15s}
+.bar::before{content:"";position:absolute;inset:0;background:var(--on);opacity:.22}
+.bar i{position:absolute;inset:0;background:var(--on);transform-origin:left center;transform:scaleX(var(--p,0))}
+.tile.is-playing .bar,.tile.is-loading .bar{opacity:1}
+
+.grip{display:none;position:absolute;top:8px;right:8px;width:44px;height:44px;align-items:center;justify-content:center;border-radius:12px;background:var(--on);color:var(--tile);touch-action:none;cursor:grab}
+.grip svg{display:block;width:22px;height:22px;fill:currentColor}
+.app.editing .grip{display:flex}
+.app.editing .tile.dragging{z-index:5;cursor:grabbing;outline:3px solid var(--fg);outline-offset:3px;box-shadow:0 18px 40px rgba(0,0,0,.45);transition:none!important}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+
+.glyph{display:flex;align-items:center;height:22px}
+.glyph>*{display:none}
+.glyph svg{display:block;width:22px;height:22px;fill:currentColor}
+.tile .g-play{display:block}
+.app.editing .tile .g-play{display:none}
+.app.editing .tile .g-edit{display:block}
+.app.editing .tile .eq,.app.editing .tile .g-load{display:none}
+.tile.is-loading .g-play{display:none}
+.tile.is-loading .g-load{display:block}
+.tile.is-playing .g-play,.tile.is-playing .g-load{display:none}
+.tile.is-playing .eq{display:inline-flex}
+.g-load{font-family:var(--f-mono);font-weight:500;letter-spacing:.1em}
+.eq{align-items:flex-end;gap:3px;height:18px}
+.eq i{width:4px;height:100%;border-radius:1px;background:currentColor;transform-origin:bottom;transform:scaleY(.3);animation:eq .9s ease-in-out infinite alternate}
+.eq i:nth-child(2){animation-delay:-.3s;animation-duration:.7s}
+.eq i:nth-child(3){animation-delay:-.6s;animation-duration:1.1s}
+.eq i:nth-child(4){animation-delay:-.15s;animation-duration:.8s}
+@keyframes eq{from{transform:scaleY(.2)}to{transform:scaleY(1)}}
+
+.empty{grid-column:1/-1;max-width:560px;padding:28px;border:2px dashed var(--line);border-radius:18px;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.empty h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:1.8rem;letter-spacing:.02em;text-transform:uppercase}
+.empty p{margin:0;color:var(--muted);max-width:52ch}
+
+/* Edit sheet */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.panel{position:relative;display:flex;flex-direction:column;width:min(100%,600px);max-height:92%;background:var(--surface);color:var(--fg);border-top:6px solid var(--tile,var(--line));border-radius:20px 20px 0 0;outline:none;box-shadow:0 -10px 40px rgba(0,0,0,.35)}
+@media (min-width:700px){.sheet{align-items:center}.panel{border-radius:20px;max-height:88%}}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.panel-head h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:1.5rem;letter-spacing:.04em;text-transform:uppercase}
+.panel-body{display:flex;flex-direction:column;gap:22px;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0;padding:0;border:0}
+.label{font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0}
+input[type="text"]{width:100%;min-height:50px;padding:0 14px;font-size:17px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.swatch{display:flex;align-items:center;justify-content:center;min-height:44px;aspect-ratio:1.3;border:0;border-radius:12px;background:var(--sw);color:var(--on);touch-action:manipulation}
+.swatch svg{width:22px;height:22px;fill:currentColor}
+.swatch[aria-checked="true"]{box-shadow:0 0 0 3px var(--surface),0 0 0 6px var(--fg)}
+.fades{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.slider{display:flex;flex-direction:column;gap:6px}
+.slider-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.slider output{font-family:var(--f-mono);font-size:.95rem}
+input[type="range"]{width:100%;min-height:44px;accent-color:var(--fg)}
+.small{font-size:.9rem}
+.clips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.clip{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 6px 4px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.clip-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clip-dur{font-size:.85rem;color:var(--muted)}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:10px;background:transparent;font-size:1.5rem;line-height:1;touch-action:manipulation}
+.icon-btn:active{background:var(--line)}
+.clips-empty{margin:0;padding:12px 0;color:var(--muted)}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;max-width:min(92vw,520px);padding:12px 18px;border-radius:12px;background:var(--fg);color:var(--bg);font-weight:600;opacity:0;transform:translate(-50%,20px);pointer-events:none;transition:opacity .2s,transform .2s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  .eq i{animation:none;transform:scaleY(.7)}
+  .tile,.btn,#toast,.bar{transition:none}
+}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Klankbord</h1>
+      <span class="counts" id="counts">Laden…</span>
+    </div>
+    <div class="actions">
+      <button class="btn" id="stopBtn" type="button" hidden>Stop</button>
+      <button class="btn" id="backupBtn" type="button">Back-up</button>
+      <button class="btn" id="addTileBtn" type="button" hidden>+ Tegel</button>
+      <button class="btn" id="editBtn" type="button" aria-pressed="false">Bewerken</button>
+    </div>
+  </header>
+  <p class="hint" id="hint" hidden>Bewerken staat aan. Tik op een tegel om hem aan te passen of sleep aan het blokje rechtsboven om hem te verplaatsen. Zet Bewerken uit om af te spelen.</p>
+  <p class="notice" id="notice" hidden></p>
+  <nav class="boards" id="boards" role="tablist" aria-label="Borden" hidden></nav>
+  <main class="grid" id="grid" aria-label="Tegels"></main>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-backdrop" id="backdrop"></div>
+  <section class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1">
+    <div class="panel-head">
+      <h2 id="sheetTitle">Tegel bewerken</h2>
+      <button class="btn btn-solid" id="doneBtn" type="button">Klaar</button>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label class="label" for="nameInput">Naam</label>
+        <input id="nameInput" type="text" maxlength="40" autocomplete="off" autocapitalize="sentences" spellcheck="false">
+      </div>
+
+      <fieldset class="field">
+        <legend class="label">Kleur</legend>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Kleur"></div>
+      </fieldset>
+
+      <div class="field">
+        <div class="fades">
+          <div class="slider">
+            <div class="slider-row"><label class="label" for="fadeIn">Fade in</label><output id="fadeInVal" for="fadeIn"></output></div>
+            <input id="fadeIn" type="range" min="0" max="10" step="0.5" value="0">
+          </div>
+          <div class="slider">
+            <div class="slider-row"><label class="label" for="fadeOut">Fade uit</label><output id="fadeOutVal" for="fadeOut"></output></div>
+            <input id="fadeOut" type="range" min="0" max="10" step="0.5" value="1">
+          </div>
+        </div>
+        <span class="muted small">Fade in en fade uit gelden voor elk fragment van deze tegel. Tik je op een andere tegel, dan loopt deze uit volgens zijn fade uit.</span>
+      </div>
+
+      <div class="field">
+        <span class="label">Fragmenten</span>
+        <span class="muted small">Staan er meerdere fragmenten op een tegel, dan kiest hij bij elke tik willekeurig een ander fragment.</span>
+        <ul class="clips" id="clipList"></ul>
+        <label class="btn" for="fileInput">+ Fragmenten toevoegen</label>
+        <input class="vh" id="fileInput" type="file" accept="audio/*" multiple>
+        <p class="muted small" id="clipStatus" role="status" aria-live="polite" style="margin:0"></p>
+      </div>
+
+      <div class="field">
+        <span class="label">Plek op het bord</span>
+        <div class="btn-row">
+          <button class="btn" id="moveEarlier" type="button">← Eerder</button>
+          <button class="btn" id="moveLater" type="button">Later →</button>
+        </div>
+      </div>
+
+      <button class="btn btn-danger" id="deleteBtn" type="button">Tegel verwijderen</button>
+    </div>
+  </section>
+</div>
+
+<div class="sheet" id="boardSheet" hidden>
+  <div class="sheet-backdrop" id="boardBackdrop"></div>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="boardSheetTitle" tabindex="-1">
+    <div class="panel-head">
+      <h2 id="boardSheetTitle">Bord bewerken</h2>
+      <button class="btn btn-solid" id="boardDoneBtn" type="button">Klaar</button>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label class="label" for="boardNameInput">Naam van het bord</label>
+        <input id="boardNameInput" type="text" maxlength="40" autocomplete="off" autocapitalize="sentences" spellcheck="false">
+      </div>
+      <div class="field">
+        <button class="btn" id="boardDupBtn" type="button">Bord dupliceren</button>
+        <span class="muted small" id="boardDupNote" role="status" aria-live="polite">Maakt een kopie met alle tegels en fragmenten. De kopie neemt extra opslagruimte in.</span>
+      </div>
+      <div class="field">
+        <button class="btn btn-danger" id="boardDeleteBtn" type="button">Bord verwijderen</button>
+        <span class="muted small" id="boardDeleteNote"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="sheet" id="backupSheet" hidden>
+  <div class="sheet-backdrop" id="backupBackdrop"></div>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="backupTitle" tabindex="-1">
+    <div class="panel-head">
+      <h2 id="backupTitle">Back-up</h2>
+      <button class="btn btn-solid" id="backupDoneBtn" type="button">Klaar</button>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <span class="label">Opslag op deze iPad</span>
+        <span id="storeStatus" class="small" role="status" aria-live="polite">Controleren…</span>
+      </div>
+      <div class="field">
+        <span class="label">Back-up maken</span>
+        <span class="muted small">Eén zip-bestand met al je borden, tegels, instellingen en geluiden. Bewaar het in de Bestanden-app, bijvoorbeeld in iCloud Drive.</span>
+        <button class="btn btn-solid" id="makeBackupBtn" type="button">Back-up opslaan</button>
+        <button class="btn btn-solid" id="shareBackupBtn" type="button" hidden>Bestand bewaren</button>
+        <p class="muted small" id="makeStatus" role="status" aria-live="polite" style="margin:0"></p>
+      </div>
+      <div class="field">
+        <span class="label">Back-up terugzetten</span>
+        <span class="muted small">Kies een zip-bestand dat je eerder met Klankbord hebt opgeslagen.</span>
+        <label class="btn" for="restoreInput">Back-up kiezen</label>
+        <input class="vh" id="restoreInput" type="file">
+        <div class="field" id="restoreChoice" hidden>
+          <span id="restoreSummary"></span>
+          <button class="btn" id="restoreAddBtn" type="button">Toevoegen aan mijn borden</button>
+          <button class="btn btn-danger" id="restoreReplaceBtn" type="button">Alles vervangen door deze back-up</button>
+        </div>
+        <p class="muted small" id="restoreStatus" role="status" aria-live="polite" style="margin:0"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- helpers ---------- */
+  const $ = (s) => document.querySelector(s);
+  const COLORS = [
+    ['Rood', '#d6333a'], ['Oranje', '#f0701a'], ['Geel', '#f2c230'], ['Groen', '#2f9e5b'], ['Turkoois', '#14a39a'],
+    ['Blauw', '#3b6fe0'], ['Indigo', '#6a55d6'], ['Paars', '#a64bb8'], ['Roze', '#d93f8f'], ['Grijs', '#6c7684']
+  ];
+  const PLAY_SVG = '<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+  const EDIT_SVG = '<svg viewBox="0 0 24 24"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zM19.7 7.05a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.1 1.1 2.75 2.75 1.1-1.1z"/></svg>';
+  const GRIP_SVG = '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.9"/><circle cx="15" cy="6" r="1.9"/><circle cx="9" cy="12" r="1.9"/><circle cx="15" cy="12" r="1.9"/><circle cx="9" cy="18" r="1.9"/><circle cx="15" cy="18" r="1.9"/></svg>';
+  const CHECK_SVG ='<svg viewBox="0 0 24 24"><path d="M9.2 16.6 5.4 12.8l-1.4 1.4 5.2 5.2L20.4 8.2 19 6.8z"/></svg>';
+
+  function uid() {
+    try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+  const nl = (n) => String(n).replace('.', ',');
+  function fmtTime(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function clampNum(v, lo, hi, d) { v = Number(v); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
+
+  function lum(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function onColor(hex) {
+    const L = lum(hex), dark = '#14171c';
+    const cw = 1.05 / (L + 0.05), cd = (L + 0.05) / (lum(dark) + 0.05);
+    return cw >= cd ? '#ffffff' : dark;
+  }
+
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    if (props) for (const k in props) {
+      const v = props[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'style') el.style.cssText = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) {
+      if (c == null || c === false) continue;
+      el.append(c.nodeType ? c : document.createTextNode(c));
+    }
+    return el;
+  }
+  function icon(svg, cls) { const s = document.createElement('span'); s.className = cls || ''; s.innerHTML = svg; return s; }
+
+  function guessType(n) {
+    const e = (n.split('.').pop() || '').toLowerCase();
+    return ({ mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', aif: 'audio/aiff', aiff: 'audio/aiff', caf: 'audio/x-caf', flac: 'audio/flac', ogg: 'audio/ogg' })[e] || 'audio/mpeg';
+  }
+  function cleanName(n) { return n.replace(/\.[^.]+$/, '').replace(/_/g, ' ').trim().slice(0, 80) || 'Fragment'; }
+  function readAB(blob) {
+    if (blob.arrayBuffer) return blob.arrayBuffer();
+    return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsArrayBuffer(blob); });
+  }
+
+  /* ---------- state + storage ---------- */
+  const store = { ok: true, mem: new Map(), dbp: null };
+  const newBoard = (name) => ({ id: uid(), name: name || 'Bord', tiles: [] });
+  let state = (() => { const b = newBoard('Bord 1'); return { boards: [b], activeBoardId: b.id }; })();
+  let loaded = false;
+
+  const notice = $('#notice');
+  function markStoreBroken(err) {
+    store.ok = false;
+    const why = err && (err.name || err.message) ? ' (' + (err.name || err.message) + ')' : '';
+    notice.hidden = false;
+    notice.textContent = 'Opslaan in deze browser lukt niet' + why + '. Wat je toevoegt blijft alleen bewaard zolang deze pagina open staat. Maak een back-up om je werk te bewaren.';
+  }
+
+  function openDb() {
+    if (store.dbp) return store.dbp;
+    store.dbp = new Promise((res, rej) => {
+      const to = setTimeout(() => rej(new Error('geen antwoord van de opslag')), 8000);
+      try {
+        const r = indexedDB.open('klankbord', 1);
+        r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('clips'); };
+        r.onsuccess = () => { clearTimeout(to); res(r.result); };
+        r.onerror = () => { clearTimeout(to); rej(r.error || new Error('opslag geweigerd')); };
+        r.onblocked = () => { clearTimeout(to); rej(new Error('opslag geblokkeerd')); };
+      } catch (e) { clearTimeout(to); rej(e); }
+    });
+    store.dbp.catch(() => { store.dbp = null; });
+    return store.dbp;
+  }
+  const reqP = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const txP = (t) => new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('abort')); });
+  async function dbOp(name, mode, fn) {
+    const db = await openDb();
+    const t = db.transaction(name, mode);
+    const r = fn(t.objectStore(name));
+    if (mode === 'readonly') return await reqP(r);
+    await txP(t);
+  }
+
+  const clipStore = {
+    async put(id, blob) {
+      if (store.ok) { try { await dbOp('clips', 'readwrite', (s) => s.put(blob, id)); return; } catch (e) { markStoreBroken(e); } }
+      store.mem.set(id, blob);
+    },
+    async get(id) {
+      if (store.mem.has(id)) return store.mem.get(id);
+      if (store.ok) { try { return await dbOp('clips', 'readonly', (s) => s.get(id)); } catch (e) { markStoreBroken(e); } }
+      return null;
+    },
+    async del(id) {
+      store.mem.delete(id);
+      if (store.ok) { try { await dbOp('clips', 'readwrite', (s) => s.delete(id)); } catch (e) {} }
+    }
+  };
+
+  // Accepts the current format ({boards}) and the first version ({tiles}).
+  function sanitize(s, keepFiles) {
+    const hex = /^#[0-9a-f]{6}$/i;
+    const cleanTile = (t) => ({
+      id: t.id,
+      name: String(t.name || '').slice(0, 40),
+      color: hex.test(t.color) ? t.color : COLORS[0][1],
+      fadeIn: clampNum(t.fadeIn, 0, 10, 0),
+      fadeOut: clampNum(t.fadeOut, 0, 10, 1),
+      clips: (Array.isArray(t.clips) ? t.clips : []).filter((c) => c && typeof c.id === 'string').map((c) => {
+        const o = { id: c.id, name: String(c.name || 'Fragment').slice(0, 80), duration: Number(c.duration) || 0 };
+        if (keepFiles) { o.file = String(c.file || ''); o.type = String(c.type || ''); }
+        return o;
+      })
+    });
+    const cleanTiles = (arr) => (Array.isArray(arr) ? arr : []).filter((t) => t && typeof t.id === 'string').map(cleanTile);
+    let boards = [];
+    if (Array.isArray(s.boards)) {
+      boards = s.boards.filter((b) => b && typeof b.id === 'string')
+        .map((b) => ({ id: b.id, name: String(b.name || '').slice(0, 40) || 'Bord', tiles: cleanTiles(b.tiles) }));
+    } else if (Array.isArray(s.tiles)) {
+      boards = [{ id: uid(), name: 'Bord 1', tiles: cleanTiles(s.tiles) }];
+    }
+    if (!boards.length && !keepFiles) boards = [newBoard('Bord 1')];
+    const active = boards.some((b) => b.id === s.activeBoardId) ? s.activeBoardId : (boards[0] ? boards[0].id : null);
+    return { boards, activeBoardId: active };
+  }
+  async function loadState() {
+    try {
+      const s = await dbOp('kv', 'readonly', (st) => st.get('state'));
+      if (s && (Array.isArray(s.boards) || Array.isArray(s.tiles))) state = sanitize(s);
+    } catch (e) { markStoreBroken(e); }
+  }
+  let saveT = 0;
+  function scheduleSave() { clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+  async function saveNow() {
+    clearTimeout(saveT);
+    if (!store.ok) return;
+    try { const copy = JSON.parse(JSON.stringify(state)); await dbOp('kv', 'readwrite', (s) => s.put(copy, 'state')); }
+    catch (e) { markStoreBroken(e); }
+  }
+  window.addEventListener('pagehide', saveNow);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveNow();
+    else if (ctx && ctx.state !== 'running') { try { const p = ctx.resume(); p && p.catch && p.catch(() => {}); } catch (e) {} }
+  });
+
+  const allTiles = () => state.boards.flatMap((b) => b.tiles);
+  const tileById = (id) => allTiles().find((t) => t.id === id);
+  const boardOfTile = (id) => state.boards.find((b) => b.tiles.some((t) => t.id === id));
+  const curBoard = () => state.boards.find((b) => b.id === state.activeBoardId) || state.boards[0];
+
+  /* ---------- audio engine ---------- */
+  let ctx = null;
+  function ensureCtx() {
+    if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); }
+    return ctx;
+  }
+  let unlocked = false;
+  function unlock() {
+    const c = ensureCtx();
+    if (c.state !== 'running') { try { const p = c.resume(); p && p.catch && p.catch(() => {}); } catch (e) {} }
+    if (!unlocked) {
+      unlocked = true;
+      try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (e) {}
+    }
+  }
+  function decode(ab) {
+    const c = ensureCtx();
+    return new Promise((res, rej) => {
+      const p = c.decodeAudioData(ab, res, rej);
+      if (p && p.catch) p.catch(rej);
+    });
+  }
+
+  // Decoded audio cache, capped so long tracks do not exhaust iPad memory.
+  const cache = new Map();
+  const inflight = new Map();
+  let cacheBytes = 0;
+  const CACHE_MAX = 220 * 1024 * 1024;
+  function cacheGet(id) { const e = cache.get(id); if (e) { cache.delete(id); cache.set(id, e); return e.buf; } return null; }
+  function cachePut(id, buf) {
+    cacheDel(id);
+    const bytes = buf.length * buf.numberOfChannels * 4;
+    cache.set(id, { buf, bytes }); cacheBytes += bytes;
+    for (const [k, v] of cache) {
+      if (cacheBytes <= CACHE_MAX || cache.size <= 1) break;
+      if (k === id) continue;
+      cache.delete(k); cacheBytes -= v.bytes;
+    }
+  }
+  function cacheDel(id) { const e = cache.get(id); if (e) { cacheBytes -= e.bytes; cache.delete(id); } }
+  function getBuffer(id) {
+    const hit = cacheGet(id);
+    if (hit) return Promise.resolve(hit);
+    if (inflight.has(id)) return inflight.get(id);
+    const p = (async () => {
+      const blob = await clipStore.get(id);
+      if (!blob) throw new Error('missing');
+      const buf = await decode(await readAB(blob));
+      cachePut(id, buf);
+      return buf;
+    })();
+    inflight.set(id, p);
+    const done = () => inflight.delete(id);
+    p.then(done, done);
+    return p;
+  }
+
+  const lastClip = new Map(); // tileId -> clipId played last
+  const nextPick = new Map(); // tileId -> clipId chosen for the next tap
+  function randomOther(tile, avoid) {
+    const pool = tile.clips.length > 1 ? tile.clips.filter((c) => c.id !== avoid) : tile.clips;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function pickClip(tile) {
+    let clip = null;
+    const planned = nextPick.get(tile.id);
+    if (planned) clip = tile.clips.find((c) => c.id === planned) || null;
+    nextPick.delete(tile.id);
+    if (!clip) clip = randomOther(tile, lastClip.get(tile.id));
+    lastClip.set(tile.id, clip.id);
+    return clip;
+  }
+  function prefetchNext(tile) {
+    if (tile.clips.length < 2) return;
+    const n = randomOther(tile, lastClip.get(tile.id));
+    nextPick.set(tile.id, n.id);
+    if (!cache.has(n.id)) getBuffer(n.id).catch(() => {});
+  }
+
+  let active = null;        // the voice that counts as "playing"
+  let loadingTileId = null; // tile whose clip is being prepared
+  let playToken = 0;
+
+  function gainAt(v, t) {
+    const e = t - v.t0;
+    if (e <= 0) return v.fi > 0 ? 0 : 1;
+    if (v.fi > 0 && e < v.fi) return e / v.fi;
+    if (v.fo > 0 && e > v.dur - v.fo) return Math.max(0, (v.dur - e) / v.fo);
+    return 1;
+  }
+
+  function startVoice(tile, clip, buf) {
+    const c = ensureCtx();
+    const dur = buf.duration;
+    const fi = Math.min(tile.fadeIn, dur / 2), fo = Math.min(tile.fadeOut, dur / 2);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const g = c.createGain();
+    const t0 = c.currentTime + 0.03;
+    g.gain.value = fi > 0 ? 0 : 1;
+    if (fi > 0) g.gain.linearRampToValueAtTime(1, t0 + fi);
+    if (fo > 0) { g.gain.setValueAtTime(1, t0 + dur - fo); g.gain.linearRampToValueAtTime(0, t0 + dur); }
+    src.connect(g); g.connect(c.destination);
+    const v = { tileId: tile.id, clipId: clip.id, clipName: clip.name, src, gain: g, t0, dur, fi, fo, stopping: false };
+    src.onended = () => {
+      try { src.disconnect(); g.disconnect(); } catch (e) {}
+      if (active === v) active = null;
+      updatePlayState();
+    };
+    src.start(t0);
+    active = v;
+    updatePlayState();
+    startProgress();
+  }
+
+  function stopVoice(v) {
+    if (!v || v.stopping) return;
+    v.stopping = true;
+    if (active === v) active = null;
+    const c = ensureCtx(), now = c.currentTime;
+    const cur = gainAt(v, now);
+    const tile = tileById(v.tileId);
+    const fade = Math.max(0.04, (tile ? tile.fadeOut : 0.1) * cur);
+    const p = v.gain.gain;
+    p.cancelScheduledValues(now);
+    p.setValueAtTime(cur, now);
+    p.linearRampToValueAtTime(0, now + fade);
+    try { v.src.stop(now + fade + 0.02); } catch (e) {}
+    updatePlayState();
+  }
+
+  async function pressTile(id) {
+    const tile = tileById(id);
+    if (!tile) return;
+    unlock();
+    if (active && active.tileId === id) { stopVoice(active); return; }
+    if (loadingTileId === id) { playToken++; loadingTileId = null; updatePlayState(); return; }
+    if (!tile.clips.length) { toast('Deze tegel heeft nog geen fragmenten. Zet Bewerken aan en voeg er een toe.'); return; }
+    const token = ++playToken;
+    if (active) stopVoice(active);
+    loadingTileId = id;
+    updatePlayState();
+    const clip = pickClip(tile);
+    let buf;
+    try { buf = await getBuffer(clip.id); }
+    catch (e) {
+      if (token === playToken) { loadingTileId = null; updatePlayState(); toast('“' + clip.name + '” kan niet worden afgespeeld. Voeg het fragment opnieuw toe.'); }
+      return;
+    }
+    if (token !== playToken) return;
+    loadingTileId = null;
+    startVoice(tile, clip, buf);
+    prefetchNext(tile);
+  }
+
+  function stopAll() {
+    playToken++; loadingTileId = null;
+    if (active) stopVoice(active);
+    updatePlayState();
+  }
+
+  let raf = 0;
+  function startProgress() { if (!raf) raf = requestAnimationFrame(tick); }
+  function tick() {
+    raf = 0;
+    if (!active) return;
+    const p = Math.min(1, Math.max(0, (ctx.currentTime - active.t0) / active.dur));
+    const el = grid.querySelector('.tile[data-id="' + active.tileId + '"]');
+    if (el) el.style.setProperty('--p', p.toFixed(4));
+    raf = requestAnimationFrame(tick);
+  }
+
+  /* ---------- board ---------- */
+  const app = $('#app'), grid = $('#grid'), editBtn = $('#editBtn'), addTileBtn = $('#addTileBtn'), stopBtn = $('#stopBtn');
+  const hint = $('#hint'), counts = $('#counts'), toastEl = $('#toast');
+  let editMode = false;
+
+  let toastT = 0;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 3600);
+  }
+
+  const metaText = (t) => t.clips.length === 0 ? 'Geen fragmenten' : t.clips.length === 1 ? '1 fragment' : t.clips.length + ' fragmenten';
+
+  function tileEl(t) {
+    return h('button', { class: 'tile', type: 'button', 'data-id': t.id, 'aria-pressed': 'false', 'aria-label': t.name || 'Zonder naam', style: '--tile:' + t.color + ';--on:' + onColor(t.color) },
+      h('span', { class: 'glyph', 'aria-hidden': 'true' },
+        icon(PLAY_SVG, 'g-play'), icon(EDIT_SVG, 'g-edit'),
+        h('span', { class: 'eq' }, h('i'), h('i'), h('i'), h('i')),
+        h('span', { class: 'g-load' }, '···')),
+      h('span', { class: 'tile-text' },
+        h('span', { class: 'name' }, t.name || 'Zonder naam'),
+        h('span', { class: 'meta' }, metaText(t))),
+      h('span', { class: 'bar', 'aria-hidden': 'true' }, h('i')),
+      h('span', { class: 'grip', 'aria-hidden': 'true' }, icon(GRIP_SVG)));
+  }
+
+  function renderGrid() {
+    grid.replaceChildren();
+    if (!loaded) return;
+    renderBoards();
+    const tiles = curBoard().tiles;
+    const nClips = tiles.reduce((n, t) => n + t.clips.length, 0);
+    counts.textContent = tiles.length
+      ? tiles.length + (tiles.length === 1 ? ' tegel · ' : ' tegels · ') + nClips + (nClips === 1 ? ' fragment' : ' fragmenten')
+      : '';
+    if (!tiles.length) {
+      grid.append(h('div', { class: 'empty' },
+        h('h2', null, 'Nog geen tegels'),
+        h('p', null, 'Een tegel is één knop op het bord. Geef hem een naam, een kleur en een of meer fragmenten. Staan er meerdere fragmenten op een tegel, dan kiest hij bij elke tik willekeurig één.'),
+        h('button', { class: 'btn btn-solid', type: 'button', onclick: () => { setEditMode(true); addTile(); } }, 'Eerste tegel maken')));
+      return;
+    }
+    tiles.forEach((t) => grid.append(tileEl(t)));
+    updatePlayState();
+    fitNames();
+  }
+
+  // Shrinks a tile's name until it fits inside the tile, with whole words where possible.
+  // Only a word too long for the tile even at the smallest size gets broken up.
+  const NAME_MIN = 14;
+  function fitNames() {
+    for (const el of grid.querySelectorAll('.tile')) {
+      const name = el.querySelector('.name'), meta = el.querySelector('.meta');
+      if (!name || !meta || !el.clientHeight) continue;
+      name.style.fontSize = '';
+      name.style.overflowWrap = 'normal';
+      const cs = getComputedStyle(el);
+      const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 22 - 12 - 12 - meta.offsetHeight;
+      let size = parseFloat(getComputedStyle(name).fontSize) || 32;
+      const fits = () => name.scrollHeight <= room + 1 && name.scrollWidth <= name.clientWidth + 1;
+      while (!fits() && size > NAME_MIN) { size -= 1; name.style.fontSize = size + 'px'; }
+      if (!fits()) name.style.overflowWrap = 'anywhere';
+    }
+  }
+  let fitRaf = 0;
+  const refit = () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fitNames); };
+  if (window.ResizeObserver) new ResizeObserver(refit).observe(grid); else window.addEventListener('resize', refit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
+
+  function updatePlayState() {
+    for (const el of grid.querySelectorAll('.tile')) {
+      const id = el.dataset.id, t = tileById(id);
+      if (!t) continue;
+      const playing = !!active && active.tileId === id, loading = loadingTileId === id;
+      el.classList.toggle('is-playing', playing);
+      el.classList.toggle('is-loading', loading);
+      el.setAttribute('aria-pressed', playing ? 'true' : 'false');
+      el.querySelector('.meta').textContent = playing ? active.clipName : loading ? 'Laden…' : metaText(t);
+      if (!playing) el.style.setProperty('--p', '0');
+    }
+    stopBtn.hidden = !(active || loadingTileId);
+    updateBoardDots();
+  }
+
+  function setEditMode(on) {
+    editMode = on;
+    app.classList.toggle('editing', on);
+    editBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    editBtn.textContent = on ? 'Klaar met bewerken' : 'Bewerken';
+    addTileBtn.hidden = !on;
+    hint.hidden = !on;
+    renderBoards();
+  }
+
+  function addTile() {
+    const board = curBoard();
+    const t = { id: uid(), name: 'Nieuwe tegel', color: COLORS[board.tiles.length % COLORS.length][1], fadeIn: 0, fadeOut: 1, clips: [] };
+    board.tiles.push(t);
+    scheduleSave();
+    renderGrid();
+    openSheet(t.id, true);
+  }
+
+  // True when the event lands on a tile's grip. Checked by position, because some browsers
+  // report the button itself as the target for events on its children.
+  function gripAt(e) {
+    const el = e.target.closest ? e.target.closest('.tile') : null;
+    const grip = el && el.querySelector('.grip');
+    if (!grip) return null;
+    const r = grip.getBoundingClientRect();
+    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom ? grip : null;
+  }
+
+  grid.addEventListener('click', (e) => {
+    if (editMode && gripAt(e)) return;
+    const el = e.target.closest('.tile');
+    if (!el) return;
+    if (editMode) openSheet(el.dataset.id); else pressTile(el.dataset.id);
+  });
+  editBtn.addEventListener('click', () => setEditMode(!editMode));
+  addTileBtn.addEventListener('click', addTile);
+  stopBtn.addEventListener('click', stopAll);
+
+  /* ---------- reorder by dragging ---------- */
+  // Drag the grip in a tile (edit mode). Tiles shift live to make room; the order is saved on drop.
+  let drag = null;
+  const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function flipMove(mutate, els) {
+    if (reduceMotion()) { mutate(); return; }
+    const before = els.map((o) => o.getBoundingClientRect());
+    mutate();
+    els.forEach((o, i) => {
+      const a = o.getBoundingClientRect();
+      const dx = before[i].left - a.left, dy = before[i].top - a.top;
+      if (!dx && !dy) return;
+      o.style.transition = 'none';
+      o.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      o.getBoundingClientRect();
+      o.style.transition = 'transform .18s ease';
+      o.style.transform = '';
+      clearTimeout(o._ft);
+      o._ft = setTimeout(() => { o.style.transition = ''; }, 220);
+    });
+  }
+
+  function dragFrame() {
+    if (!drag) return;
+    const d = drag, el = d.el;
+    const vh = window.innerHeight;
+    if (d.y < 70) window.scrollBy(0, -14); else if (d.y > vh - 70) window.scrollBy(0, 14);
+    el.style.transform = 'none';
+    const g = grid.getBoundingClientRect();
+    const px = d.x - g.left, py = d.y - g.top;
+    const others = Array.from(grid.querySelectorAll('.tile')).filter((t) => t !== el);
+    let target = null;
+    for (const o of others) {
+      if (px >= o.offsetLeft && px <= o.offsetLeft + o.offsetWidth && py >= o.offsetTop && py <= o.offsetTop + o.offsetHeight) { target = o; break; }
+    }
+    if (target) {
+      const after = (el.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      flipMove(() => grid.insertBefore(el, after ? target.nextSibling : target), others);
+    }
+    const s = el.getBoundingClientRect();
+    el.style.transform = 'translate(' + (d.x - d.offX - s.left) + 'px,' + (d.y - d.offY - s.top) + 'px)';
+    d.raf = requestAnimationFrame(dragFrame);
+  }
+
+  function finishDrag() {
+    const d = drag;
+    if (!d) return;
+    drag = null;
+    cancelAnimationFrame(d.raf);
+    try { d.grip.releasePointerCapture(d.id); } catch (e) {}
+    const el = d.el;
+    el.style.transition = 'transform .15s ease';
+    el.style.transform = '';
+    el.classList.remove('dragging');
+    setTimeout(() => { el.style.transition = ''; }, 200);
+    const board = curBoard();
+    const byId = new Map(board.tiles.map((t) => [t.id, t]));
+    const next = Array.from(grid.querySelectorAll('.tile')).map((t) => byId.get(t.dataset.id)).filter(Boolean);
+    if (next.length === board.tiles.length && next.some((t, i) => t !== board.tiles[i])) { board.tiles = next; scheduleSave(); }
+  }
+
+  grid.addEventListener('pointerdown', (e) => {
+    if (!editMode || drag) return;
+    const grip = gripAt(e);
+    if (!grip || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const el = grip.closest('.tile');
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    drag = { el, grip, id: e.pointerId, offX: e.clientX - r.left, offY: e.clientY - r.top, x: e.clientX, y: e.clientY, raf: 0 };
+    try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+    el.classList.add('dragging');
+    drag.raf = requestAnimationFrame(dragFrame);
+  });
+  grid.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id) { drag.x = e.clientX; drag.y = e.clientY; } });
+  const endDrag = (e) => { if (drag && e.pointerId === drag.id) finishDrag(); };
+  grid.addEventListener('pointerup', endDrag);
+  grid.addEventListener('pointercancel', endDrag);
+  grid.addEventListener('lostpointercapture', endDrag);
+
+  /* ---------- edit sheet ---------- */
+  const sheet = $('#sheet'), panel = $('#panel'), nameInput = $('#nameInput'), swatchesEl = $('#swatches');
+  const fadeInEl = $('#fadeIn'), fadeOutEl = $('#fadeOut'), fadeInVal = $('#fadeInVal'), fadeOutVal = $('#fadeOutVal');
+  const clipList = $('#clipList'), fileInput = $('#fileInput'), clipStatus = $('#clipStatus'), deleteBtn = $('#deleteBtn');
+  const moveEarlier = $('#moveEarlier'), moveLater = $('#moveLater');
+  let editingId = null, deleteArmed = false, deleteT = 0;
+
+  const setStatus = (m) => { clipStatus.textContent = m; };
+  function showFade() { fadeInVal.textContent = nl(fadeInEl.value) + ' s'; fadeOutVal.textContent = nl(fadeOutEl.value) + ' s'; }
+  function resetDelete() { deleteArmed = false; clearTimeout(deleteT); deleteBtn.textContent = 'Tegel verwijderen'; }
+
+  function renderSwatches(t) {
+    swatchesEl.replaceChildren(...COLORS.map(([name, hex]) => {
+      const on = t.color.toLowerCase() === hex;
+      return h('button', {
+        type: 'button', class: 'swatch', role: 'radio', 'aria-checked': on ? 'true' : 'false', 'aria-label': name, title: name,
+        style: '--sw:' + hex + ';--on:' + onColor(hex),
+        onclick: () => { t.color = hex; panel.style.setProperty('--tile', hex); renderSwatches(t); scheduleSave(); }
+      }, on ? icon(CHECK_SVG) : null);
+    }));
+  }
+
+  function renderClips(t) {
+    clipList.replaceChildren();
+    if (!t.clips.length) { clipList.append(h('li', { class: 'clips-empty' }, 'Nog geen fragmenten. Voeg een of meer geluidsbestanden toe.')); return; }
+    t.clips.forEach((c) => clipList.append(h('li', { class: 'clip' },
+      h('span', { class: 'clip-name' }, c.name),
+      h('span', { class: 'clip-dur' }, fmtTime(c.duration)),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Verwijder ' + c.name, onclick: () => removeClip(t, c.id) }, '×'))));
+  }
+
+  function removeClip(t, clipId) {
+    t.clips = t.clips.filter((c) => c.id !== clipId);
+    clipStore.del(clipId); cacheDel(clipId);
+    nextPick.delete(t.id);
+    if (lastClip.get(t.id) === clipId) lastClip.delete(t.id);
+    renderClips(t); scheduleSave();
+  }
+
+  function openSheet(id, focusName) {
+    const t = tileById(id);
+    if (!t) return;
+    editingId = id;
+    nameInput.value = t.name;
+    panel.style.setProperty('--tile', t.color);
+    fadeInEl.value = t.fadeIn; fadeOutEl.value = t.fadeOut; showFade();
+    renderSwatches(t); renderClips(t); setStatus(''); resetDelete(); updateMoveButtons();
+    sheet.hidden = false;
+    if (focusName) { nameInput.focus(); nameInput.select(); } else panel.focus();
+  }
+  function closeSheet() {
+    if (sheet.hidden) return;
+    sheet.hidden = true; editingId = null; resetDelete();
+    saveNow(); renderGrid();
+  }
+
+  nameInput.addEventListener('input', () => { const t = tileById(editingId); if (t) { t.name = nameInput.value; scheduleSave(); } });
+  fadeInEl.addEventListener('input', () => { const t = tileById(editingId); if (t) { t.fadeIn = Number(fadeInEl.value); showFade(); scheduleSave(); } });
+  fadeOutEl.addEventListener('input', () => { const t = tileById(editingId); if (t) { t.fadeOut = Number(fadeOutEl.value); showFade(); scheduleSave(); } });
+  function updateMoveButtons() {
+    const b = boardOfTile(editingId);
+    const i = b ? b.tiles.findIndex((t) => t.id === editingId) : -1;
+    moveEarlier.disabled = i <= 0;
+    moveLater.disabled = i < 0 || i >= b.tiles.length - 1;
+  }
+  function moveTile(delta) {
+    const b = boardOfTile(editingId);
+    if (!b) return;
+    const i = b.tiles.findIndex((t) => t.id === editingId), j = i + delta;
+    if (j < 0 || j >= b.tiles.length) return;
+    const [t] = b.tiles.splice(i, 1);
+    b.tiles.splice(j, 0, t);
+    scheduleSave();
+    updateMoveButtons();
+  }
+  moveEarlier.addEventListener('click', () => moveTile(-1));
+  moveLater.addEventListener('click', () => moveTile(1));
+  $('#doneBtn').addEventListener('click', closeSheet);
+  $('#backdrop').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeSheet(); closeBoardSheet(); closeBackupSheet(); } });
+
+  deleteBtn.addEventListener('click', () => {
+    if (!deleteArmed) {
+      deleteArmed = true; deleteBtn.textContent = 'Zeker weten? Tik nogmaals';
+      deleteT = setTimeout(resetDelete, 4000);
+      return;
+    }
+    const t = tileById(editingId);
+    if (t) {
+      if (active && active.tileId === t.id) stopVoice(active);
+      if (loadingTileId === t.id) { playToken++; loadingTileId = null; }
+      t.clips.forEach((c) => { clipStore.del(c.id); cacheDel(c.id); });
+      nextPick.delete(t.id); lastClip.delete(t.id);
+      const b = boardOfTile(t.id);
+      if (b) b.tiles = b.tiles.filter((x) => x.id !== t.id);
+    }
+    closeSheet();
+  });
+
+  fileInput.addEventListener('change', async () => {
+    const files = Array.from(fileInput.files || []);
+    fileInput.value = '';
+    const tile = tileById(editingId);
+    if (!files.length || !tile) return;
+    ensureCtx();
+    let ok = 0; const failed = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      setStatus('Toevoegen ' + (i + 1) + ' van ' + files.length + ': ' + f.name);
+      try {
+        const ab = await readAB(f);
+        const buf = await decode(ab.slice(0));
+        const id = uid();
+        await clipStore.put(id, new Blob([ab], { type: f.type || guessType(f.name) }));
+        if (!boardOfTile(tile.id)) { clipStore.del(id); break; }
+        cachePut(id, buf);
+        tile.clips.push({ id, name: cleanName(f.name), duration: buf.duration });
+        nextPick.delete(tile.id);
+        ok++;
+        if (editingId === tile.id) renderClips(tile);
+        scheduleSave();
+      } catch (e) { failed.push(f.name); }
+    }
+    if (ok && navigator.storage && navigator.storage.persist) { try { navigator.storage.persist().catch(() => {}); } catch (e) {} }
+    setStatus(failed.length
+      ? (ok ? ok + ' toegevoegd. ' : '') + 'Niet gelukt: ' + failed.join(', ') + '. Gebruik MP3, M4A, AAC of WAV.'
+      : ok + (ok === 1 ? ' fragment toegevoegd.' : ' fragmenten toegevoegd.'));
+  });
+
+  /* ---------- boards ---------- */
+  const boardsEl = $('#boards');
+  const boardSheet = $('#boardSheet'), boardNameInput = $('#boardNameInput');
+  const boardDeleteBtn = $('#boardDeleteBtn'), boardDeleteNote = $('#boardDeleteNote');
+  let editingBoardId = null, boardDeleteArmed = false, boardDeleteT = 0;
+
+  function renderBoards() {
+    if (!loaded) return;
+    boardsEl.replaceChildren();
+    const show = state.boards.length > 1 || editMode;
+    boardsEl.hidden = !show;
+    if (!show) return;
+    const cur = curBoard();
+    state.boards.forEach((b) => {
+      const sel = b.id === cur.id;
+      boardsEl.append(h('button', {
+        type: 'button', class: 'board-tab', role: 'tab', 'aria-selected': sel ? 'true' : 'false', 'data-id': b.id,
+        onclick: () => (sel && editMode ? openBoardSheet(b.id) : switchBoard(b.id))
+      }, h('span', { class: 'dot', hidden: true }), b.name || 'Bord', sel && editMode ? icon(EDIT_SVG) : null));
+    });
+    if (editMode) boardsEl.append(h('button', { type: 'button', class: 'board-tab board-add', onclick: addBoard }, '+ Bord'));
+    updateBoardDots();
+  }
+  function updateBoardDots() {
+    const pb = active ? boardOfTile(active.tileId) : null;
+    for (const el of boardsEl.querySelectorAll('.board-tab[data-id]')) {
+      const d = el.querySelector('.dot');
+      if (d) d.hidden = !(pb && pb.id === el.dataset.id);
+    }
+  }
+  function switchBoard(id) {
+    if (state.activeBoardId === id) return;
+    state.activeBoardId = id;
+    scheduleSave();
+    renderGrid();
+  }
+  function addBoard() {
+    const b = newBoard('Bord ' + (state.boards.length + 1));
+    state.boards.push(b);
+    state.activeBoardId = b.id;
+    scheduleSave();
+    renderGrid();
+    openBoardSheet(b.id, true);
+  }
+  function purgeTile(t) {
+    if (active && active.tileId === t.id) stopVoice(active);
+    if (loadingTileId === t.id) { playToken++; loadingTileId = null; }
+    t.clips.forEach((c) => { clipStore.del(c.id); cacheDel(c.id); });
+    nextPick.delete(t.id); lastClip.delete(t.id);
+  }
+
+  function resetBoardDelete() { boardDeleteArmed = false; clearTimeout(boardDeleteT); boardDeleteBtn.textContent = 'Bord verwijderen'; }
+  function openBoardSheet(id, focusName) {
+    const b = state.boards.find((x) => x.id === id);
+    if (!b) return;
+    editingBoardId = id;
+    boardNameInput.value = b.name;
+    resetBoardDelete();
+    const only = state.boards.length < 2;
+    boardDeleteBtn.disabled = only;
+    boardDeleteNote.textContent = only ? 'Je hebt minstens één bord nodig.' : 'Verwijdert ook alle tegels en fragmenten op dit bord.';
+    boardDupNote.textContent = 'Maakt een kopie met alle tegels en fragmenten. De kopie neemt extra opslagruimte in.';
+    boardSheet.hidden = false;
+    if (focusName) { boardNameInput.focus(); boardNameInput.select(); } else boardSheet.querySelector('.panel').focus();
+  }
+  let dupBusy = false;
+  function closeBoardSheet() {
+    if (boardSheet.hidden || dupBusy) return;
+    boardSheet.hidden = true; editingBoardId = null; resetBoardDelete();
+    saveNow(); renderGrid();
+  }
+  boardNameInput.addEventListener('input', () => {
+    const b = state.boards.find((x) => x.id === editingBoardId);
+    if (b) { b.name = boardNameInput.value; scheduleSave(); }
+  });
+  // Copies a board with real copies of its sounds, so changing one board never touches the other.
+  const boardDupBtn = $('#boardDupBtn'), boardDupNote = $('#boardDupNote');
+  boardDupBtn.addEventListener('click', async () => {
+    if (dupBusy) return;
+    const src = state.boards.find((x) => x.id === editingBoardId);
+    if (!src) return;
+    dupBusy = true; boardDupBtn.disabled = true; boardDeleteBtn.disabled = true;
+    const total = src.tiles.reduce((n, t) => n + t.clips.length, 0);
+    let done = 0, lost = 0;
+    try {
+      const copy = { id: uid(), name: (src.name + ' (kopie)').slice(0, 40), tiles: [] };
+      for (const t of src.tiles) {
+        const nt = { id: uid(), name: t.name, color: t.color, fadeIn: t.fadeIn, fadeOut: t.fadeOut, clips: [] };
+        for (const c of t.clips) {
+          boardDupNote.textContent = 'Kopiëren… ' + (++done) + ' van ' + total;
+          const blob = await clipStore.get(c.id);
+          if (!blob) { lost++; continue; }
+          const id = uid();
+          await clipStore.put(id, blob);
+          nt.clips.push({ id, name: c.name, duration: c.duration });
+        }
+        copy.tiles.push(nt);
+      }
+      const i = state.boards.findIndex((x) => x.id === src.id);
+      state.boards.splice(i + 1, 0, copy);
+      state.activeBoardId = copy.id;
+      await saveNow();
+      renderGrid();
+      editingBoardId = copy.id;
+      boardNameInput.value = copy.name;
+      resetBoardDelete();
+      boardDupNote.textContent = lost
+        ? 'Kopie gemaakt. ' + lost + (lost === 1 ? ' geluid' : ' geluiden') + ' ontbrak in het origineel en is overgeslagen. Je bewerkt nu de kopie.'
+        : 'Kopie gemaakt. Je bewerkt nu de kopie, geef hem hierboven een naam.';
+      boardDeleteNote.textContent = 'Verwijdert ook alle tegels en fragmenten op dit bord.';
+    } catch (e) {
+      boardDupNote.textContent = 'Kopiëren is niet gelukt.';
+    } finally {
+      dupBusy = false; boardDupBtn.disabled = false; boardDeleteBtn.disabled = state.boards.length < 2;
+    }
+  });
+  $('#boardDoneBtn').addEventListener('click', closeBoardSheet);
+  $('#boardBackdrop').addEventListener('click', closeBoardSheet);
+  boardDeleteBtn.addEventListener('click', () => {
+    if (!boardDeleteArmed) {
+      boardDeleteArmed = true; boardDeleteBtn.textContent = 'Zeker weten? Tik nogmaals';
+      boardDeleteT = setTimeout(resetBoardDelete, 4000);
+      return;
+    }
+    const b = state.boards.find((x) => x.id === editingBoardId);
+    if (b && state.boards.length > 1) {
+      b.tiles.forEach(purgeTile);
+      state.boards = state.boards.filter((x) => x.id !== b.id);
+      if (state.activeBoardId === b.id) state.activeBoardId = state.boards[0].id;
+    }
+    closeBoardSheet();
+  });
+  backupBtnInit();
+
+  /* ---------- backup ---------- */
+  // The backup is a plain (uncompressed) zip: manifest.json plus one file per sound.
+  const backupSheet = $('#backupSheet'), makeBackupBtn = $('#makeBackupBtn'), makeStatus = $('#makeStatus');
+  const restoreInput = $('#restoreInput'), restoreChoice = $('#restoreChoice'), restoreSummary = $('#restoreSummary');
+  const restoreAddBtn = $('#restoreAddBtn'), restoreReplaceBtn = $('#restoreReplaceBtn'), restoreStatus = $('#restoreStatus');
+  let pending = null, busy = false, replaceArmed = false, replaceT = 0;
+
+  const CRC_T = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(u8) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function localHeader(nb, crc, size, time, date) {
+    const b = new ArrayBuffer(30 + nb.length), d = new DataView(b);
+    d.setUint32(0, 0x04034b50, true); d.setUint16(4, 20, true); d.setUint16(6, 0x0800, true); d.setUint16(8, 0, true);
+    d.setUint16(10, time, true); d.setUint16(12, date, true);
+    d.setUint32(14, crc, true); d.setUint32(18, size, true); d.setUint32(22, size, true);
+    d.setUint16(26, nb.length, true); d.setUint16(28, 0, true);
+    new Uint8Array(b).set(nb, 30);
+    return b;
+  }
+  function centralHeader(nb, crc, size, time, date, offset) {
+    const b = new ArrayBuffer(46 + nb.length), d = new DataView(b);
+    d.setUint32(0, 0x02014b50, true); d.setUint16(4, 20, true); d.setUint16(6, 20, true); d.setUint16(8, 0x0800, true); d.setUint16(10, 0, true);
+    d.setUint16(12, time, true); d.setUint16(14, date, true);
+    d.setUint32(16, crc, true); d.setUint32(20, size, true); d.setUint32(24, size, true);
+    d.setUint16(28, nb.length, true); d.setUint16(30, 0, true); d.setUint16(32, 0, true);
+    d.setUint16(34, 0, true); d.setUint16(36, 0, true); d.setUint32(38, 0, true); d.setUint32(42, offset, true);
+    new Uint8Array(b).set(nb, 46);
+    return b;
+  }
+  function endRecord(count, cdSize, cdOffset) {
+    const b = new ArrayBuffer(22), d = new DataView(b);
+    d.setUint32(0, 0x06054b50, true); d.setUint16(4, 0, true); d.setUint16(6, 0, true);
+    d.setUint16(8, count, true); d.setUint16(10, count, true);
+    d.setUint32(12, cdSize, true); d.setUint32(16, cdOffset, true); d.setUint16(20, 0, true);
+    return b;
+  }
+  function extFor(type) {
+    return ({ 'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'aac', 'audio/wav': 'wav', 'audio/x-wav': 'wav',
+      'audio/aiff': 'aiff', 'audio/x-aiff': 'aiff', 'audio/flac': 'flac', 'audio/ogg': 'ogg', 'audio/x-caf': 'caf' })[type] || 'bin';
+  }
+  const pause = () => new Promise((r) => setTimeout(r, 0));
+  function dateStamp() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  async function getDownloads() {
+    try { return window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { return null; }
+  }
+
+  async function buildBackup(progress) {
+    const enc = new TextEncoder();
+    const all = [];
+    state.boards.forEach((b) => b.tiles.forEach((t) => t.clips.forEach((c) => all.push(c))));
+    const found = new Map();
+    let i = 0;
+    for (const c of all) {
+      progress(++i, all.length);
+      const blob = await clipStore.get(c.id);
+      if (!blob) continue;
+      const u8 = new Uint8Array(await readAB(blob));
+      found.set(c.id, { blob, crc: crc32(u8), size: u8.length, type: blob.type || 'audio/mpeg' });
+      await pause();
+    }
+    const manifest = {
+      app: 'klankbord', version: 2, created: new Date().toISOString(), activeBoardId: state.activeBoardId,
+      boards: state.boards.map((b) => ({
+        id: b.id, name: b.name,
+        tiles: b.tiles.map((t) => ({
+          id: t.id, name: t.name, color: t.color, fadeIn: t.fadeIn, fadeOut: t.fadeOut,
+          clips: t.clips.filter((c) => found.has(c.id)).map((c) => {
+            const f = found.get(c.id);
+            return { id: c.id, name: c.name, duration: c.duration, type: f.type, file: 'audio/' + c.id + '.' + extFor(f.type) };
+          })
+        }))
+      }))
+    };
+    const mBytes = enc.encode(JSON.stringify(manifest));
+    const files = [{ name: 'manifest.json', data: mBytes, crc: crc32(mBytes), size: mBytes.length }];
+    manifest.boards.forEach((b) => b.tiles.forEach((t) => t.clips.forEach((c) => {
+      const f = found.get(c.id);
+      files.push({ name: c.file, data: f.blob, crc: f.crc, size: f.size });
+    })));
+    const d = new Date();
+    const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const parts = [], cd = [];
+    let off = 0;
+    for (const f of files) {
+      const nb = enc.encode(f.name);
+      const lh = localHeader(nb, f.crc, f.size, time, date);
+      cd.push(centralHeader(nb, f.crc, f.size, time, date, off));
+      parts.push(lh, f.data);
+      off += lh.byteLength + f.size;
+    }
+    if (off > 0xFFFFFF00) throw new Error('too big');
+    let cdSize = 0;
+    cd.forEach((x) => { parts.push(x); cdSize += x.byteLength; });
+    parts.push(endRecord(files.length, cdSize, off));
+    return new Blob(parts, { type: 'application/zip' });
+  }
+
+  async function makeBackup() {
+    if (busy) return;
+    busy = true; makeBackupBtn.disabled = true;
+    try {
+      readyBackup = null; shareBackupBtn.hidden = true;
+      const dl = await getDownloads();
+      await saveNow();
+      const filename = 'klankbord-back-up-' + dateStamp() + '.zip';
+      const blob = await buildBackup((n, total) => { makeStatus.textContent = 'Back-up samenstellen… ' + n + ' van ' + total; });
+      if (dl) {
+        makeStatus.textContent = 'Wachten op je bevestiging…';
+        await dl.save({ filename, data: blob });
+        makeStatus.textContent = 'Back-up opgeslagen. Bewaar het bestand op een veilige plek.';
+      } else {
+        // No save function from the viewer: hand the file over through the share sheet instead.
+        // That needs a fresh tap, so the file is prepared first and saved with a second button.
+        readyBackup = { blob, filename };
+        shareBackupBtn.hidden = false;
+        makeStatus.textContent = 'Back-up klaar (' + (blob.size < 1048576 ? Math.max(1, Math.round(blob.size / 1024)) + ' KB' : (blob.size / 1048576).toFixed(1).replace('.', ',') + ' MB') + '). Tik op “Bestand bewaren” en kies “Bewaar in Bestanden”.';
+      }
+    } catch (e) {
+      const code = e && e.code;
+      makeStatus.textContent = code === 'declined' ? 'Opslaan geannuleerd.'
+        : code === 'too_large' ? 'De back-up is te groot om in één keer op te slaan.'
+        : code === 'rate_limited' ? 'Even wachten en dan opnieuw proberen.'
+        : 'De back-up kon niet worden gemaakt (' + (code || (e && (e.name || e.message)) || 'onbekende fout') + ').';
+    } finally { busy = false; makeBackupBtn.disabled = false; }
+  }
+
+  const shareBackupBtn = $('#shareBackupBtn');
+  let readyBackup = null;
+  shareBackupBtn.addEventListener('click', async () => {
+    if (!readyBackup) return;
+    const { blob, filename } = readyBackup;
+    try {
+      const f = new File([blob], filename, { type: 'application/zip' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        await navigator.share({ files: [f], title: filename });
+        makeStatus.textContent = 'Gedeeld. Als je “Bewaar in Bestanden” hebt gekozen, staat de back-up nu in die map.';
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') { makeStatus.textContent = 'Opslaan geannuleerd.'; return; }
+    }
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      makeStatus.textContent = 'Download gestart. Kijk in de Bestanden-app bij Downloads.';
+    } catch (e) {
+      makeStatus.textContent = 'Opslaan lukte niet op deze manier (' + ((e && (e.name || e.message)) || 'onbekende fout') + ').';
+    }
+  });
+
+  async function readZip(file) {
+    const bad = () => new Error('bad');
+    const n = file.size;
+    if (n < 22) throw bad();
+    const tailLen = Math.min(n, 65557);
+    const tail = new DataView(await file.slice(n - tailLen, n).arrayBuffer());
+    let p = -1;
+    for (let i = tailLen - 22; i >= 0; i--) { if (tail.getUint32(i, true) === 0x06054b50) { p = i; break; } }
+    if (p < 0) throw bad();
+    const count = tail.getUint16(p + 10, true), cdSize = tail.getUint32(p + 12, true), cdOff = tail.getUint32(p + 16, true);
+    const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+    const dec = new TextDecoder();
+    const entries = new Map();
+    let q = 0;
+    for (let i = 0; i < count; i++) {
+      if (q + 46 > cd.byteLength || cd.getUint32(q, true) !== 0x02014b50) throw bad();
+      const method = cd.getUint16(q + 10, true), size = cd.getUint32(q + 20, true);
+      const nlen = cd.getUint16(q + 28, true), elen = cd.getUint16(q + 30, true), clen = cd.getUint16(q + 32, true), lo = cd.getUint32(q + 42, true);
+      entries.set(dec.decode(new Uint8Array(cd.buffer, q + 46, nlen)), { method, size, lo });
+      q += 46 + nlen + elen + clen;
+    }
+    async function dataBlob(name) {
+      const e = entries.get(name);
+      if (!e || e.method !== 0) throw bad();
+      const lh = new DataView(await file.slice(e.lo, e.lo + 30).arrayBuffer());
+      const start = e.lo + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+      return file.slice(start, start + e.size);
+    }
+    return { entries, dataBlob };
+  }
+
+  async function parseBackup(file) {
+    const zip = await readZip(file);
+    if (!zip.entries.has('manifest.json')) throw new Error('bad');
+    const raw = JSON.parse(new TextDecoder().decode(await readAB(await zip.dataBlob('manifest.json'))));
+    if (!raw || raw.app !== 'klankbord') throw new Error('bad');
+    return { zip, manifest: sanitize(raw, true) };
+  }
+
+  function setRestoreButtons(on) { restoreAddBtn.disabled = !on; restoreReplaceBtn.disabled = !on; restoreInput.disabled = !on; }
+  function resetReplace() { replaceArmed = false; clearTimeout(replaceT); restoreReplaceBtn.textContent = 'Alles vervangen door deze back-up'; }
+
+  async function applyBackup(mode) {
+    if (!pending || busy) return;
+    busy = true; setRestoreButtons(false); resetReplace();
+    const { zip, manifest } = pending;
+    const total = manifest.boards.reduce((a, b) => a + b.tiles.reduce((m, t) => m + t.clips.length, 0), 0);
+    let done = 0, skipped = 0;
+    try {
+      const imported = [];
+      for (const b of manifest.boards) {
+        const nb = { id: uid(), name: b.name, tiles: [], srcId: b.id };
+        for (const t of b.tiles) {
+          const nt = { id: uid(), name: t.name, color: t.color, fadeIn: t.fadeIn, fadeOut: t.fadeOut, clips: [] };
+          for (const c of t.clips) {
+            restoreStatus.textContent = 'Terugzetten… ' + (++done) + ' van ' + total;
+            try {
+              const raw = await zip.dataBlob(c.file);
+              const id = uid();
+              await clipStore.put(id, new Blob([await readAB(raw)], { type: c.type || guessType(c.file) }));
+              nt.clips.push({ id, name: c.name, duration: c.duration });
+            } catch (e) { skipped++; }
+            await pause();
+          }
+          nb.tiles.push(nt);
+        }
+        imported.push(nb);
+      }
+      const pick = imported.find((b) => b.srcId === manifest.activeBoardId) || imported[0];
+      imported.forEach((b) => { delete b.srcId; });
+      if (mode === 'replace') {
+        playToken++; loadingTileId = null;
+        if (active) stopVoice(active);
+        state.boards.forEach((b) => b.tiles.forEach(purgeTile));
+        nextPick.clear(); lastClip.clear();
+        state.boards = imported.length ? imported : [newBoard('Bord 1')];
+      } else {
+        state.boards.push(...imported);
+      }
+      state.activeBoardId = (pick || state.boards[0]).id;
+      await saveNow();
+      renderGrid();
+      pending = null; restoreChoice.hidden = true;
+      restoreStatus.textContent = 'Klaar: ' + imported.length + (imported.length === 1 ? ' bord' : ' borden') + ' teruggezet.'
+        + (skipped ? ' ' + skipped + (skipped === 1 ? ' geluid' : ' geluiden') + ' ontbrak in de back-up.' : '');
+    } catch (e) {
+      restoreStatus.textContent = 'Terugzetten is niet gelukt.';
+    } finally { busy = false; setRestoreButtons(true); }
+  }
+
+  // Writes and reads one test value, so the person can see whether this browser keeps data.
+  async function checkStore() {
+    const out = $('#storeStatus');
+    out.textContent = 'Controleren…';
+    try {
+      if (!store.ok) throw new Error('opslag staat uit');
+      await dbOp('kv', 'readwrite', (s) => s.put(Date.now(), 'probe'));
+      const v = await dbOp('kv', 'readonly', (s) => s.get('probe'));
+      if (!v) throw new Error('niets teruggelezen');
+      let pinned = false;
+      try { pinned = !!(navigator.storage && navigator.storage.persisted && await navigator.storage.persisted()); } catch (e) {}
+      out.textContent = 'Werkt. Je tegels en geluiden worden bewaard in Safari' + (pinned ? ' (vastgezet).' : '. Safari kan ze wissen als je de pagina lang niet opent, dus maak af en toe een back-up.');
+    } catch (e) {
+      out.textContent = 'Werkt niet (' + ((e && (e.name || e.message)) || 'onbekende fout') + '). Wat je toevoegt blijft alleen bewaard zolang deze pagina open staat. Maak een back-up om je werk te bewaren.';
+    }
+  }
+
+  function backupBtnInit() {
+    $('#backupBtn').addEventListener('click', () => {
+      makeStatus.textContent = ''; restoreStatus.textContent = '';
+      readyBackup = null; shareBackupBtn.hidden = true;
+      pending = null; restoreChoice.hidden = true; resetReplace();
+      backupSheet.hidden = false;
+      backupSheet.querySelector('.panel').focus();
+      checkStore();
+    });
+  }
+  function closeBackupSheet() { if (!backupSheet.hidden && !busy) { backupSheet.hidden = true; resetReplace(); } }
+  $('#backupDoneBtn').addEventListener('click', closeBackupSheet);
+  $('#backupBackdrop').addEventListener('click', closeBackupSheet);
+  makeBackupBtn.addEventListener('click', makeBackup);
+  restoreAddBtn.addEventListener('click', () => applyBackup('add'));
+  restoreReplaceBtn.addEventListener('click', () => {
+    if (!replaceArmed) {
+      replaceArmed = true; restoreReplaceBtn.textContent = 'Zeker weten? Tik nogmaals';
+      replaceT = setTimeout(resetReplace, 4000);
+      return;
+    }
+    applyBackup('replace');
+  });
+  restoreInput.addEventListener('change', async () => {
+    const f = restoreInput.files && restoreInput.files[0];
+    restoreInput.value = '';
+    if (!f) return;
+    pending = null; restoreChoice.hidden = true; resetReplace();
+    restoreStatus.textContent = 'Back-up lezen…';
+    try {
+      pending = await parseBackup(f);
+      const bs = pending.manifest.boards;
+      const nT = bs.reduce((a, b) => a + b.tiles.length, 0);
+      const nC = bs.reduce((a, b) => a + b.tiles.reduce((m, t) => m + t.clips.length, 0), 0);
+      restoreSummary.textContent = 'Deze back-up bevat ' + bs.length + (bs.length === 1 ? ' bord, ' : ' borden, ')
+        + nT + (nT === 1 ? ' tegel en ' : ' tegels en ') + nC + (nC === 1 ? ' fragment.' : ' fragmenten.');
+      restoreChoice.hidden = false;
+      restoreStatus.textContent = '';
+    } catch (e) {
+      pending = null;
+      restoreStatus.textContent = 'Dit is geen Klankbord-back-up, of het bestand is beschadigd.';
+    }
+  });
+
+  /* ---------- start ---------- */
+  setEditMode(false);
+  // loadState always settles: opening the store gives up after 8 seconds.
+  loadState().then(() => {
+    loaded = true;
+    renderGrid();
+  });
+})();
+</script>
+
+</body></html>
